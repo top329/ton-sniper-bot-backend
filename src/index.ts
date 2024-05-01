@@ -8,11 +8,11 @@ import { libNode } from '@tonclient/lib-node';
 import {
   SortDirection,
   TonClient,
-  ParamsOfSubscribe,
-  ParamsOfSubscribeCollection,
+  // ParamsOfSubscribe,
+  // ParamsOfSubscribeCollection,
 } from '@tonclient/core';
-import { Readable } from 'stream';
-import WebSocket from 'ws';
+// import { Readable } from 'stream';
+// import WebSocket from 'ws';
 
 const _client = new StonApiClient();
 
@@ -27,12 +27,12 @@ const port = process.env.PORT || 5000;
 
 const app: Express = express();
 const server = http.createServer(app);
-const ws = new WebSocket('wss://tonapi.io/v2/websocket', {
-  headers: {
-    Authorization:
-      'Bearer AHC4IYTEMUOMVZYAAAACRCIPDXYY3OMJHLYG4G4KAFMYAY4YHGS5TGCXQJKWQEJA7HDESSY',
-  },
-});
+// const ws = new WebSocket('wss://tonapi.io/v2/websocket', {
+//   headers: {
+//     Authorization:
+//       'Bearer AHC4IYTEMUOMVZYAAAACRCIPDXYY3OMJHLYG4G4KAFMYAY4YHGS5TGCXQJKWQEJA7HDESSY',
+//   },
+// });
 
 // ws.on('open', () => {
 //   // Subscribe to the "subscribe_mempool" method
