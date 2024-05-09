@@ -12,7 +12,9 @@ import {
   // ParamsOfSubscribeCollection,
 } from '@tonclient/core';
 // import { Readable } from 'stream';
-// import WebSocket from 'ws';
+import WebSocket from 'ws';
+import fs from 'fs';
+import path from 'path';
 
 const _client = new StonApiClient();
 
@@ -27,6 +29,165 @@ const port = process.env.PORT || 5000;
 
 const app: Express = express();
 const server = http.createServer(app);
+
+const wss = new WebSocket.Server({ server });
+
+const wsClient = new WebSocket('ws://localhost:5000');
+
+wsClient.on('open', () => {
+  console.log('WebSocket connection opened');
+});
+
+wss.on('connection', (ws: WebSocket) => {
+  console.log('New WebSocket connection');
+
+  ws.on('message', (message: string) => {
+    console.log(`Received message: ${message}`);
+    ws.send(`Server received your message: ${message}`);
+  });
+
+  ws.on('close', () => {
+    console.log('WebSocket connection closed');
+  });
+});
+
+// function fetchData() {
+//   return new Promise((resolve, reject) => {
+//     _client
+//       .getPools()
+//       .then((response) => resolve(response))
+//       .catch((error) => reject(error));
+//   });
+// }
+
+// async function snipe() {
+//   let temp = 0;
+//   let tempPoolData: any[] = [];
+
+//   const intervalHandler = async () => {
+//     try {
+//       const response: any = await fetchData();
+//       const numberOfPools = response.length;
+
+//       if (temp === 0) {
+//         temp = numberOfPools;
+//         tempPoolData = response;
+//       }
+
+//       if (temp < numberOfPools) {
+//         console.log('New Pool Added');
+//         console.log('Updated number of pools:', numberOfPools);
+
+//         const diff = response.filter(
+//           (currentPool: any) =>
+//             !tempPoolData.some(
+//               (previousPool) => previousPool.address === currentPool.address,
+//             ),
+//         );
+
+//         console.log('New Pools:', diff);
+
+//         const filePath = path.join(__dirname, 'output.json');
+//         fs.writeFile(
+//           filePath,
+//           diff.map((obj: any) => JSON.stringify(obj)).join(', '),
+//           (err) => {
+//             if (err) {
+//               console.error('Error writing file:', err);
+//               return;
+//             }
+//             console.log('File written successfully!');
+//           },
+//         );
+
+//         tempPoolData = response;
+//       } else {
+//         temp = numberOfPools;
+//         tempPoolData = response;
+//         console.log('Number of Pools:', numberOfPools);
+//       }
+//     } catch (error) {
+//       console.error('Error in intervalHandler:', error);
+//     } finally {
+//       setTimeout(intervalHandler, 1000); // Recursive call to ensure proper timing
+//     }
+//   };
+
+//   intervalHandler();
+// }
+
+// snipe();
+
+function snipe() {
+  let temp = 0;
+  let tempPoolData: any[] = [];
+  setInterval(async () => {
+    const response = await _client.getPools();
+    const numberOfPools = response.length;
+    if (temp === 0) {
+      temp = numberOfPools;
+      tempPoolData = response;
+    }
+    if (temp < numberOfPools) {
+      console.log('New Pool Added');
+      console.log('updated number of pools: ', numberOfPools);
+      temp = numberOfPools;
+      // const diff: any = response.filter(pool => !tempPoolData.includes(pool));
+      const diff: any = response.filter(
+        (currentPool) =>
+          !tempPoolData.some(
+            (previousPool) => previousPool.address === currentPool.address,
+          ),
+      );
+      console.log('New Pools:', diff);
+      const filePath = path.join(__dirname, 'output.json');
+      // fs.writeFile(
+      //   filePath,
+      //   diff.map((obj: any) => JSON.stringify(obj)).join(', '),
+      //   (err) => {
+      //     if (err) {
+      //       console.error('Error writing file:', err);
+      //       return;
+      //     }
+      //     console.log('File written successfully!');
+      //   },
+      // );
+      fs.readFile(filePath, 'utf8', (err, data) => {
+        if (err) {
+          console.error('Error reading file:', err);
+          return;
+        }
+
+        // Parse the existing data as an array
+        const existingData = data ? JSON.parse(`[${data}]`) : [];
+
+        // Append the new data to the existing data
+        const updatedData = [...existingData, ...diff];
+
+        // Write the updated data to the file
+        fs.writeFile(
+          filePath,
+          updatedData.map((obj) => JSON.stringify(obj)).join(', '),
+          (err) => {
+            if (err) {
+              console.error('Error writing file:', err);
+              return;
+            }
+            console.log('File written successfully!');
+          },
+        );
+      });
+      tempPoolData = response;
+    } else {
+      temp = numberOfPools;
+      tempPoolData = response;
+      console.log(numberOfPools);
+    }
+  }, 1000);
+}
+
+snipe();
+
 // const ws = new WebSocket('wss://tonapi.io/v2/websocket', {
 //   headers: {
 //     Authorization:
@@ -120,6 +281,47 @@ client.net.subscribe_collection({
   },
   result: 'id,src,data',
 });
+
+// async function monitorLiquidityPoolEvents(): Promise<void> {
+//   try {
+//     // Subscribe to mempool events related to liquidity pool creation
+//     const subscription = await client.net.subscribe_collection({
+//       collection: 'transactions',
+//       filter: {
+//         status: { eq: 0 }, // Pending transactions in the mempool
+//         // Add additional filters to target liquidity pool creation events
+//       },
+//       result: 'id',
+//     });
+
+//     // subscription.on('data', (data: any) => {
+//     //   console.log('New transaction in mempool:', data);
+//     //   // Check if the transaction is related to liquidity pool creation
+//     //   // Process the transaction data as needed
+//     // });
+//     console.log(subscription.handle);
+//     const transactionData = await client.net.query_collection({
+//       collection: 'transactions',
+//       filter: {
+//         id: { eq: 3654176063 }, // Filter transactions by the subscription handle
+//       },
+//       result: 'id, block_id, in_message, out_messages', // Define the transaction data to retrieve
+//     });
+
+//     console.log('Transaction Data:', transactionData);
+
+//     console.log(
+//       'Monitoring for new liquidity pool creation events in the mempool...',
+//     );
+//   } catch (error) {
+//     console.error(
+//       'Error monitoring for liquidity pool creation events:',
+//       error,
+//     );
+//   }
+// }
+
+// monitorLiquidityPoolEvents();
 
 async function decodeBoCData(bocData: string) {
   try {
