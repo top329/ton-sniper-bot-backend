@@ -58,13 +58,12 @@
     "@ton/ton": "^13.11.1",
     "@tonclient/core": "^1.30.0",
     "@tonclient/lib-node": "^1.30.0",
-    "@types/ws": "^8.5.10",
     "axios": "^1.6.8",
     "express": "^4.19.2",
     "jest-cucumber": "^3.0.1",
+    "socket.io": "^4.7.5",
     "ton-client-js": "^0.28.1",
     "tonweb": "^0.0.66",
-    "web3": "^4.8.0",
-    "ws": "^8.17.0"
+    "web3": "^4.8.0"
   }
 }
